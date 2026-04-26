@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Beck's Corner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #0e0e0f;
+    --bg2: #161617;
+    --bg3: #1e1e20;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0efe8;
+    --text2: #888880;
+    --text3: #555550;
+    --accent: #c8f542;
+    --accent-dim: rgba(200,245,66,0.12);
+    --radius: 10px;
+    --radius-lg: 14px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  /* layout */
+  #app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* topbar */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; height: 50px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 20px; }
+  .logo { font-size: 13px; font-weight: 500; letter-spacing: 0.05em; color: var(--accent); font-family: var(--mono); }
+  .nav-links { display: flex; gap: 2px; }
+  .nav-btn {
+    background: none; border: none; cursor: pointer; font-family: var(--font);
+    font-size: 12px; color: var(--text2); padding: 5px 10px; border-radius: 6px;
+    transition: background 0.12s, color 0.12s;
+  }
+  .nav-btn:hover { background: var(--bg3); color: var(--text); }
+  .nav-btn.active { color: var(--text); }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: none; border: 1px solid var(--border); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text2); font-size: 14px; transition: background 0.12s, color 0.12s;
+    position: relative;
+  }
+  .icon-btn:hover { background: var(--bg3); color: var(--text); }
+  .badge {
+    position: absolute; top: -4px; right: -4px;
+    background: var(--accent); color: #000;
+    font-size: 9px; font-weight: 500; font-family: var(--mono);
+    min-width: 14px; height: 14px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center; padding: 0 3px;
+  }
+  .avatar-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent-dim); border: 1px solid var(--accent);
+    cursor: pointer; font-size: 12px; font-weight: 500; color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* main */
+  .main { flex: 1; max-width: 720px; width: 100%; margin: 0 auto; padding: 44px 24px 48px; }
+
+  /* greeting */
+  .greeting { font-size: 26px; font-weight: 300; margin-bottom: 28px; color: var(--text); letter-spacing: -0.01em; }
+  .greeting span { color: var(--accent); font-weight: 400; }
+
+  /* search */
+  .search-row { display: flex; gap: 8px; margin-bottom: 44px; }
+  .search-wrap { flex: 1; position: relative; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px; pointer-events: none; }
+  .search-input {
+    width: 100%; padding: 10px 14px 10px 34px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); font-family: var(--font); font-size: 13px; outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--border2); }
+  .search-input::placeholder { color: var(--text3); }
+  .search-engine-btn {
+    padding: 0 14px; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text2); font-size: 11px;
+    font-family: var(--mono); cursor: pointer; transition: background 0.12s, color 0.12s;
+    white-space: nowrap;
+  }
+  .search-engine-btn:hover { background: var(--bg3); color: var(--text); }
+
+  /* section */
+  .section-label { font-size: 10px; font-family: var(--mono); letter-spacing: 0.1em; color: var(--text3); text-transform: uppercase; margin-bottom: 12px; }
+
+  /* shortcuts */
+  .shortcuts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); gap: 8px; margin-bottom: 36px; }
+  .shortcut {
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    padding: 14px 6px 12px; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    cursor: pointer; transition: background 0.12s, border-color 0.12s;
+    position: relative; text-decoration: none;
+  }
+  .shortcut:hover { background: var(--bg3); border-color: var(--border2); }
+  .shortcut-icon { width: 34px; height: 34px; border-radius: 9px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .shortcut-label { font-size: 10px; color: var(--text2); text-align: center; line-height: 1.3; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .shortcut-del {
+    position: absolute; top: 5px; right: 5px; width: 16px; height: 16px; border-radius: 50%;
+    background: rgba(255,60,60,0.15); border: none; color: #ff6060; font-size: 10px;
+    cursor: pointer; display: none; align-items: center; justify-content: center;
+  }
+  .shortcut:hover .shortcut-del { display: flex; }
+  .shortcut-add {
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    padding: 14px 6px 12px; background: none;
+    border: 1px dashed var(--border2); border-radius: var(--radius-lg);
+    cursor: pointer; transition: background 0.12s; font-family: var(--font);
+  }
+  .shortcut-add:hover { background: var(--bg2); }
+  .shortcut-add-icon { width: 34px; height: 34px; border-radius: 9px; background: var(--bg3); display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 18px; }
+  .shortcut-add-label { font-size: 10px; color: var(--text3); }
+
+  /* nav chips */
+  .chips-row { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 8px; }
+  .chip {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 12px; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: 99px;
+    font-size: 11px; color: var(--text2); cursor: pointer;
+    transition: background 0.12s, border-color 0.12s; text-decoration: none;
+  }
+  .chip:hover { background: var(--bg3); border-color: var(--border2); color: var(--text); }
+  .chip-del { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 12px; display: none; line-height: 1; padding: 0; }
+  .chip:hover .chip-del { display: inline; }
+  .chip-add {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 12px; background: none;
+    border: 1px dashed var(--border2); border-radius: 99px;
+    font-size: 11px; color: var(--text3); cursor: pointer; font-family: var(--font);
+    transition: background 0.12s;
+  }
+  .chip-add:hover { background: var(--bg2); }
+
+  /* panels */
+  .panel {
+    display: none; position: fixed; right: 0; top: 50px; bottom: 0;
+    width: 340px; background: var(--bg2); border-left: 1px solid var(--border);
+    flex-direction: column; z-index: 40;
+  }
+  .panel.open { display: flex; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .panel-title { font-size: 13px; font-weight: 500; }
+  .panel-close { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 18px; line-height: 1; }
+  .panel-body { flex: 1; overflow-y: auto; padding: 12px; }
+
+  /* messages */
+  .msg-list { display: flex; flex-direction: column; gap: 2px; }
+  .msg-thread {
+    display: flex; align-items: center; gap: 10px; padding: 10px 10px;
+    border-radius: var(--radius); cursor: pointer; transition: background 0.1s;
+  }
+  .msg-thread:hover { background: var(--bg3); }
+  .msg-thread.unread .msg-thread-name { color: var(--text); font-weight: 500; }
+  .msg-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--text2); flex-shrink: 0; }
+  .msg-info { flex: 1; min-width: 0; }
+  .msg-thread-name { font-size: 12px; color: var(--text2); margin-bottom: 2px; }
+  .msg-preview { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .msg-time { font-size: 10px; color: var(--text3); font-family: var(--mono); flex-shrink: 0; }
+  .unread-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  /* conversation view */
+  .convo-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .back-btn { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 16px; }
+  .convo-name { font-size: 13px; font-weight: 500; }
+  .convo-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .msg-bubble-row { display: flex; gap: 8px; }
+  .msg-bubble-row.mine { flex-direction: row-reverse; }
+  .bubble {
+    max-width: 220px; padding: 8px 12px; border-radius: 12px;
+    font-size: 12px; line-height: 1.5; word-break: break-word;
+    background: var(--bg3); color: var(--text); border: 1px solid var(--border);
+  }
+  .mine .bubble { background: var(--accent-dim); border-color: rgba(200,245,66,0.2); color: var(--text); }
+  .bubble-time { font-size: 9px; color: var(--text3); margin-top: 3px; font-family: var(--mono); }
+  .convo-input-row { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+  .convo-input {
+    flex: 1; padding: 8px 12px; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: var(--font); font-size: 12px; outline: none;
+  }
+  .convo-input:focus { border-color: var(--border2); }
+  .convo-input::placeholder { color: var(--text3); }
+  .send-btn {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: var(--accent); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 14px; color: #000;
+  }
+  .send-btn:hover { opacity: 0.85; }
+
+  /* new message */
+  .new-msg-btn {
+    margin: 12px; padding: 9px; border-radius: var(--radius);
+    background: var(--accent-dim); border: 1px solid rgba(200,245,66,0.2);
+    color: var(--accent); font-size: 12px; font-family: var(--font); cursor: pointer;
+    transition: background 0.12s;
+  }
+  .new-msg-btn:hover { background: rgba(200,245,66,0.18); }
+
+  /* profile panel */
+  .profile-wrap { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .profile-avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--accent-dim); border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 500; color: var(--accent); }
+  .profile-name { font-size: 16px; font-weight: 500; }
+  .profile-email { font-size: 12px; color: var(--text2); }
+  .profile-divider { height: 1px; background: var(--border); }
+  .profile-btn {
+    padding: 9px 14px; border-radius: var(--radius); font-family: var(--font); font-size: 12px;
+    cursor: pointer; border: 1px solid var(--border); background: none; color: var(--text2);
+    transition: background 0.12s, color 0.12s; text-align: left;
+  }
+  .profile-btn:hover { background: var(--bg3); color: var(--text); }
+  .profile-btn.danger { color: #ff6060; border-color: rgba(255,96,96,0.2); }
+  .profile-btn.danger:hover { background: rgba(255,96,96,0.08); }
+
+  /* modals */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); padding: 24px; width: 320px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .modal-title { font-size: 15px; font-weight: 500; }
+  .modal-subtitle { font-size: 12px; color: var(--text2); }
+  .field-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; font-family: var(--mono); }
+  .field-input {
+    width: 100%; padding: 9px 12px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text); font-family: var(--font);
+    font-size: 12px; outline: none; transition: border-color 0.15s;
+  }
+  .field-input:focus { border-color: var(--border2); }
+  .field-input::placeholder { color: var(--text3); }
+  .btn-row { display: flex; gap: 8px; }
+  .btn {
+    flex: 1; padding: 9px; font-size: 12px; font-weight: 500; cursor: pointer;
+    border-radius: var(--radius); font-family: var(--font); transition: opacity 0.12s;
+    border: 1px solid var(--border);
+  }
+  .btn-ghost { background: none; color: var(--text2); }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+  .btn-primary { background: var(--accent); color: #000; border-color: var(--accent); }
+  .btn-primary:hover { opacity: 0.85; }
+  .error-msg { font-size: 11px; color: #ff6060; display: none; }
+  .tab-row { display: flex; gap: 4px; }
+  .tab-btn {
+    flex: 1; padding: 7px; font-size: 11px; font-family: var(--font);
+    border-radius: 6px; border: 1px solid var(--border); background: none; cursor: pointer;
+    color: var(--text2); transition: background 0.12s, color 0.12s;
+  }
+  .tab-btn.active { background: var(--bg3); color: var(--text); border-color: var(--border2); }
+
+  /* new message modal */
+  .user-result {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+    border-radius: 8px; cursor: pointer; transition: background 0.1s;
+  }
+  .user-result:hover { background: var(--bg3); }
+  .user-result-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text2); border: 1px solid var(--border); }
+  .user-result-name { font-size: 12px; color: var(--text); }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px;
+    padding: 10px 18px; font-size: 12px; color: var(--text);
+    opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 200;
+    font-family: var(--mono);
+  }
+  .toast.show { opacity: 1; }
+
+  /* loading */
+  #loadingScreen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 300;
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px;
+  }
+  .loading-logo { font-family: var(--mono); font-size: 18px; color: var(--accent); letter-spacing: 0.08em; }
+  .loading-dot { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+
+  @keyframes blink { 0%,100%{opacity:0.3} 50%{opacity:1} }
+  .loading-dot::after { content: '...'; animation: blink 1.2s infinite; }
+</style>
+</head>
+<body>
+<div id="loadingScreen">
+  <div class="loading-logo">beck's corner</div>
+  <div class="loading-dot">loading</div>
+</div>
+
+<div id="app" style="display:none">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="logo">beck's corner</span>
+      <div class="nav-links" id="navLinks"></div>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" id="msgBtn" onclick="togglePanel('msgPanel')" title="Messages">
+        ✉
+        <span class="badge" id="unreadBadge" style="display:none">0</span>
+      </button>
+      <div id="authArea"></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="greeting" id="greeting">Good morning.</div>
+
+    <div class="search-row">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" id="searchInput" placeholder="Search the web..." onkeydown="if(event.key==='Enter')doSearch()" />
+      </div>
+      <button class="search-engine-btn" id="engineBtn" onclick="cycleEngine()">Google</button>
+    </div>
+
+    <div class="section-label">shortcuts</div>
+    <div class="shortcuts-grid" id="shortcutsGrid"></div>
+
+    <div style="margin-bottom: 32px">
+      <div class="section-label">nav links</div>
+      <div class="chips-row" id="navChips"></div>
+    </div>
+  </div>
+
+  <!-- MESSAGES PANEL -->
+  <div class="panel" id="msgPanel">
+    <div id="msgPanelContent"></div>
+  </div>
+
+  <!-- PROFILE PANEL -->
+  <div class="panel" id="profilePanel">
+    <div id="profilePanelContent"></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <div class="modal-title" id="authModalTitle">Sign in</div>
+    <div class="tab-row">
+      <button class="tab-btn active" id="tabSignin" onclick="switchAuthTab('signin')">Sign in</button>
+      <button class="tab-btn" id="tabSignup" onclick="switchAuthTab('signup')">Sign up</button>
+    </div>
+    <div id="signupNameField" style="display:none">
+      <div class="field-label">username</div>
+      <input class="field-input" id="authUsername" placeholder="choose a username" />
+    </div>
+    <div>
+      <div class="field-label">email</div>
+      <input class="field-input" id="authEmail" type="email" placeholder="you@example.com" />
+    </div>
+    <div>
+      <div class="field-label">password</div>
+      <input class="field-input" id="authPassword" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAuth()" />
+    </div>
+    <div class="error-msg" id="authError"></div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeModal('authModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doAuth()" id="authSubmitBtn">Sign in</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addShortcutModal">
+  <div class="modal">
+    <div class="modal-title">Add shortcut</div>
+    <div>
+      <div class="field-label">label</div>
+      <input class="field-input" id="scLabel" placeholder="e.g. GitHub" />
+    </div>
+    <div>
+      <div class="field-label">url</div>
+      <input class="field-input" id="scUrl" placeholder="https://github.com" />
+    </div>
+    <div>
+      <div class="field-label">emoji icon</div>
+      <input class="field-input" id="scEmoji" placeholder="🐙" maxlength="4" />
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeModal('addShortcutModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveShortcut()">Add</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addNavModal">
+  <div class="modal">
+    <div class="modal-title">Add nav link</div>
+    <div>
+      <div class="field-label">label</div>
+      <input class="field-input" id="navLabel" placeholder="e.g. Games" />
+    </div>
+    <div>
+      <div class="field-label">url</div>
+      <input class="field-input" id="navUrl" placeholder="https://..." />
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeModal('addNavModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNav()">Add</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="newMsgModal">
+  <div class="modal">
+    <div class="modal-title">New message</div>
+    <div>
+      <div class="field-label">search users</div>
+      <input class="field-input" id="userSearch" placeholder="username..." oninput="searchUsers()" />
+    </div>
+    <div id="userResults" style="max-height:160px;overflow-y:auto;margin-top:4px"></div>
+    <button class="btn btn-ghost" onclick="closeModal('newMsgModal')">Cancel</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://gogvcjtrettswpfsqkri.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvZ3ZjanRyZXR0c3dwZnNxa3JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5ODQ2MTEsImV4cCI6MjA5MjU2MDYxMX0.Ze2am4tVM6JyGbZK3KKWkLSRLgM1RNMc2ZazXxpyINg';
+const sb = supabase.createClient(eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvZ3ZjanRyZXR0c3dwZnNxa3JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5ODQ2MTEsImV4cCI6MjA5MjU2MDYxMX0.Ze2am4tVM6JyGbZK3KKWkLSRLgM1RNMc2ZazXxpyINg, sb_publishable_exdHPrsrmg5qxfJwGnaOPA_7R14NvqG);
+
+// ─── STATE ───────────────────────────────────────────────
+let currentUser = null;
+let currentProfile = null;
+let authTab = 'signin';
+let searchEngines = ['Google','DuckDuckGo','Bing'];
+let engineIdx = 0;
+let shortcuts = [];
+let navLinks = [];
+let openPanelId = null;
+let currentConvoUserId = null;
+let convoMessages = [];
+let msgChannel = null;
+let threads = [];
+
+// ─── DEFAULTS ────────────────────────────────────────────
+const DEFAULT_SHORTCUTS = [
+  {label:'Google',url:'https://google.com',emoji:'🔍'},
+  {label:'GitHub',url:'https://github.com',emoji:'🐙'},
+  {label:'YouTube',url:'https://youtube.com',emoji:'▶️'},
+  {label:'Discord',url:'https://discord.com',emoji:'💬'},
+  {label:'Reddit',url:'https://reddit.com',emoji:'🤖'},
+  {label:'Twitch',url:'https://twitch.tv',emoji:'🟣'},
+];
+const DEFAULT_NAV = [
+  {label:'Games',url:'#'},
+  {label:'Apps',url:'#'},
+  {label:'Media',url:'#'},
+];
+
+// ─── LOCAL STORAGE ───────────────────────────────────────
+function lsGet(k,d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch{return d;} }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch{} }
+
+// ─── INIT ────────────────────────────────────────────────
+async function init() {
+  shortcuts = lsGet('bc_shortcuts', DEFAULT_SHORTCUTS);
+  navLinks  = lsGet('bc_nav', DEFAULT_NAV);
+  engineIdx = lsGet('bc_engine', 0);
+
+  setGreeting();
+  renderNav();
+  renderShortcuts();
+  renderNavChips();
+  updateEngineBtn();
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadProfile();
+  }
+  renderAuthArea();
+  if (currentUser) {
+    subscribeMessages();
+    loadThreads();
+  }
+
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+}
+
+// ─── GREETING ────────────────────────────────────────────
+function setGreeting() {
+  const h = new Date().getHours();
+  const name = currentProfile?.username ? `, <span>${currentProfile.username}</span>` : '';
+  const greetWord = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const greetWord = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  document.getElementById('greeting').innerHTML = greetWord + (currentProfile?.username ? `, <span>${currentProfile.username}</span>.` : '.');
+}
+
+// ─── AUTH ─────────────────────────────────────────────────
+function renderAuthArea() {
+  const el = document.getElementById('authArea');
+  if (currentUser) {
+    const initials = (currentProfile?.username || currentUser.email || 'U').slice(0,2).toUpperCase();
+    el.innerHTML = `<button class="avatar-btn" onclick="togglePanel('profilePanel')">${initials}</button>`;
+  } else {
+    el.innerHTML = `<button class="icon-btn" onclick="openModal('authModal')" title="Sign in" style="width:auto;padding:0 10px;font-size:11px;font-family:var(--mono)">sign in</button>`;
+  }
+}
+
+function switchAuthTab(tab) {
+  authTab = tab;
+  document.getElementById('tabSignin').className = 'tab-btn' + (tab==='signin'?' active':'');
+  document.getElementById('tabSignup').className = 'tab-btn' + (tab==='signup'?' active':'');
+  document.getElementById('signupNameField').style.display = tab==='signup'?'block':'none';
+  document.getElementById('authSubmitBtn').textContent = tab==='signin'?'Sign in':'Sign up';
+  document.getElementById('authModalTitle').textContent = tab==='signin'?'Sign in':'Create account';
+  document.getElementById('authError').style.display='none';
+}
+
+async function doAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const username = document.getElementById('authUsername').value.trim();
+  const errEl = document.getElementById('authError');
+  errEl.style.display='none';
+
+  if (!email || !password) { showErr(errEl,'Fill in email and password.'); return; }
+
+  if (authTab === 'signin') {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) { showErr(errEl, error.message); return; }
+    currentUser = data.user;
+  } else {
+    if (!username) { showErr(errEl,'Choose a username.'); return; }
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if (error) { showErr(errEl, error.message); return; }
+    currentUser = data.user;
+    // create profile
+    await sb.from('profiles').upsert({ id: currentUser.id, username, email });
+  }
+
+  await loadProfile();
+  closeModal('authModal');
+  renderAuthArea();
+  setGreeting();
+  subscribeMessages();
+  loadThreads();
+  showToast('Signed in ✓');
+}
+
+async function loadProfile() {
+  if (!currentUser) return;
+  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  currentProfile = data;
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  currentUser = null; currentProfile = null;
+  if (msgChannel) { sb.removeChannel(msgChannel); msgChannel = null; }
+  renderAuthArea();
+  setGreeting();
+  closePanel('profilePanel');
+  showToast('Signed out');
+}
+
+function showErr(el, msg) { el.textContent = msg; el.style.display='block'; }
+
+// ─── PROFILE PANEL ────────────────────────────────────────
+function renderProfilePanel() {
+  const initials = (currentProfile?.username || currentUser?.email || 'U').slice(0,2).toUpperCase();
+  document.getElementById('profilePanelContent').innerHTML = `
+    <div class="panel-header">
+      <span class="panel-title">Profile</span>
+      <button class="panel-close" onclick="closePanel('profilePanel')">×</button>
+    </div>
+    <div class="profile-wrap">
+      <div class="profile-avatar">${initials}</div>
+      <div>
+        <div class="profile-name">${currentProfile?.username || 'User'}</div>
+        <div class="profile-email">${currentUser?.email || ''}</div>
+      </div>
+      <div class="profile-divider"></div>
+      <button class="profile-btn" onclick="closePanel('profilePanel')">✎ &nbsp;Edit shortcuts</button>
+      <button class="profile-btn danger" onclick="signOut()">→ &nbsp;Sign out</button>
+    </div>
+  `;
+}
+
+// ─── MESSAGING ────────────────────────────────────────────
+async function loadThreads() {
+  if (!currentUser) return;
+  const { data } = await sb.from('messages')
+    .select('*')
+    .or(`sender_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
+    .order('created_at', { ascending: false });
+
+  if (!data) return;
+
+  // group by conversation partner
+  const threadMap = {};
+  for (const m of data) {
+    const otherId = m.sender_id === currentUser.id ? m.recipient_id : m.sender_id;
+    if (!threadMap[otherId]) threadMap[otherId] = { otherId, latest: m, unread: 0 };
+    if (!m.read_at && m.recipient_id === currentUser.id) threadMap[otherId].unread++;
+  }
+
+  const ids = Object.keys(threadMap);
+  let profileMap = {};
+  if (ids.length) {
+    const { data: profiles } = await sb.from('profiles').select('id,username').in('id', ids);
+    if (profiles) profiles.forEach(p => { profileMap[p.id] = p; });
+  }
+
+  threads = Object.values(threadMap).map(t => ({ ...t, profile: profileMap[t.otherId] }));
+  updateUnreadBadge();
+  if (document.getElementById('msgPanel').classList.contains('open') && !currentConvoUserId) {
+    renderThreadList();
+  }
+}
+
+function updateUnreadBadge() {
+  const total = threads.reduce((s,t) => s + t.unread, 0);
+  const badge = document.getElementById('unreadBadge');
+  badge.style.display = total > 0 ? 'flex' : 'none';
+  badge.textContent = total;
+}
+
+function renderMsgPanel() {
+  if (currentConvoUserId) { renderConvoView(); return; }
+  renderThreadList();
+}
+
+function renderThreadList() {
+  const el = document.getElementById('msgPanelContent');
+  let html = `
+    <div class="panel-header">
+      <span class="panel-title">Messages</span>
+      <button class="panel-close" onclick="closePanel('msgPanel')">×</button>
+    </div>
+    ${currentUser ? `<button class="new-msg-btn" onclick="openNewMsg()">+ New message</button>` : ''}
+    <div class="panel-body">
+  `;
+  if (!currentUser) {
+    html += `<div style="text-align:center;padding:32px 0;color:var(--text3);font-size:12px">Sign in to message others</div>`;
+  } else if (!threads.length) {
+    html += `<div style="text-align:center;padding:32px 0;color:var(--text3);font-size:12px">No messages yet</div>`;
+  } else {
+    html += `<div class="msg-list">`;
+    for (const t of threads) {
+      const name = t.profile?.username || 'Unknown';
+      const initials = name.slice(0,2).toUpperCase();
+      const preview = t.latest.content.slice(0,40) + (t.latest.content.length>40?'…':'');
+      const time = formatTime(t.latest.created_at);
+      const unreadClass = t.unread > 0 ? 'unread' : '';
+      html += `
+        <div class="msg-thread ${unreadClass}" onclick="openConvo('${t.otherId}','${name}')">
+          <div class="msg-avatar">${initials}</div>
+          <div class="msg-info">
+            <div class="msg-thread-name">${name}</div>
+            <div class="msg-preview">${preview}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <div class="msg-time">${time}</div>
+            ${t.unread>0?`<div class="unread-dot"></div>`:''}
+          </div>
+        </div>
+      `;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+async function openConvo(userId, username) {
+  currentConvoUserId = userId;
+  // mark as read
+  await sb.from('messages').update({ read_at: new Date().toISOString() })
+    .eq('sender_id', userId).eq('recipient_id', currentUser.id).is('read_at', null);
+
+  await loadConvoMessages();
+  renderConvoView(username);
+  // update badge
+  const t = threads.find(t => t.otherId === userId);
+  if (t) t.unread = 0;
+  updateUnreadBadge();
+}
+
+async function loadConvoMessages() {
+  if (!currentUser || !currentConvoUserId) return;
+  const { data } = await sb.from('messages')
+    .select('*')
+    .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${currentConvoUserId}),and(sender_id.eq.${currentConvoUserId},recipient_id.eq.${currentUser.id})`)
+    .order('created_at', { ascending: true });
+  convoMessages = data || [];
+}
+
+function renderConvoView(username) {
+  const el = document.getElementById('msgPanelContent');
+  const name = username || (threads.find(t=>t.otherId===currentConvoUserId)?.profile?.username) || 'User';
+  let msgs = '';
+  for (const m of convoMessages) {
+    const mine = m.sender_id === currentUser.id;
+    const time = formatTime(m.created_at);
+    msgs += `
+      <div class="msg-bubble-row ${mine?'mine':''}">
+        <div style="display:flex;flex-direction:column;align-items:${mine?'flex-end':'flex-start'}">
+          <div class="bubble">${escHtml(m.content)}</div>
+          <div class="bubble-time">${time}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  el.innerHTML = `
+    <div class="convo-header">
+      <button class="back-btn" onclick="backToThreads()">←</button>
+      <div class="msg-avatar" style="width:28px;height:28px;font-size:10px">${name.slice(0,2).toUpperCase()}</div>
+      <div class="convo-name">${name}</div>
+    </div>
+    <div class="convo-messages" id="convoMsgs">${msgs || '<div style="text-align:center;padding:24px;color:var(--text3);font-size:11px">No messages yet</div>'}</div>
+    <div class="convo-input-row">
+      <input class="convo-input" id="msgInput" placeholder="Message..." onkeydown="if(event.key==='Enter')sendMessage()" />
+      <button class="send-btn" onclick="sendMessage()">↑</button>
+    </div>
+  `;
+  scrollMsgs();
+}
+
+function scrollMsgs() {
+  const el = document.getElementById('convoMsgs');
+  if (el) el.scrollTop = el.scrollHeight;
+}
+
+async function sendMessage() {
+  if (!currentUser || !currentConvoUserId) return;
+  const input = document.getElementById('msgInput');
+  const content = input.value.trim();
+  if (!content) return;
+  input.value = '';
+
+  const { data, error } = await sb.from('messages').insert({
+    sender_id: currentUser.id,
+    recipient_id: currentConvoUserId,
+    content
+  }).select().single();
+
+  if (!error && data) {
+    convoMessages.push(data);
+    renderConvoView();
+  }
+}
+
+function backToThreads() {
+  currentConvoUserId = null;
+  convoMessages = [];
+  loadThreads().then(renderThreadList);
+}
+
+function subscribeMessages() {
+  if (!currentUser) return;
+  msgChannel = sb.channel('messages-' + currentUser.id)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'messages',
+      filter: `recipient_id=eq.${currentUser.id}`
+    }, async (payload) => {
+      if (currentConvoUserId === payload.new.sender_id) {
+        convoMessages.push(payload.new);
+        renderConvoView();
+      } else {
+        await loadThreads();
+        if (document.getElementById('msgPanel').classList.contains('open') && !currentConvoUserId) {
+          renderThreadList();
+        }
+      }
+    })
+    .subscribe();
+}
+
+// ─── NEW MESSAGE SEARCH ───────────────────────────────────
+async function searchUsers() {
+  const q = document.getElementById('userSearch').value.trim();
+  const el = document.getElementById('userResults');
+  if (!q) { el.innerHTML=''; return; }
+  const { data } = await sb.from('profiles').select('id,username').ilike('username','%'+q+'%').neq('id', currentUser.id).limit(8);
+  if (!data || !data.length) { el.innerHTML='<div style="padding:8px;font-size:11px;color:var(--text3)">No users found</div>'; return; }
+  el.innerHTML = data.map(u=>`
+    <div class="user-result" onclick="startConvo('${u.id}','${u.username}')">
+      <div class="user-result-avatar">${u.username.slice(0,2).toUpperCase()}</div>
+      <div class="user-result-name">${u.username}</div>
+    </div>
+  `).join('');
+}
+
+function startConvo(userId, username) {
+  closeModal('newMsgModal');
+  currentConvoUserId = userId;
+  convoMessages = [];
+  if (!document.getElementById('msgPanel').classList.contains('open')) {
+    togglePanel('msgPanel');
+  }
+  renderConvoView(username);
+}
+
+function openNewMsg() {
+  document.getElementById('userSearch').value='';
+  document.getElementById('userResults').innerHTML='';
+  openModal('newMsgModal');
+}
+
+// ─── SEARCH ───────────────────────────────────────────────
+const ENGINES = [
+  { name:'Google',   url:'https://www.google.com/search?q=' },
+  { name:'DDG',      url:'https://duckduckgo.com/?q=' },
+  { name:'Bing',     url:'https://www.bing.com/search?q=' },
+];
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  window.open(ENGINES[engineIdx].url + encodeURIComponent(q), '_blank');
+}
+function cycleEngine() {
+  engineIdx = (engineIdx + 1) % ENGINES.length;
+  lsSet('bc_engine', engineIdx);
+  updateEngineBtn();
+}
+function updateEngineBtn() {
+  document.getElementById('engineBtn').textContent = ENGINES[engineIdx].name;
+}
+
+// ─── SHORTCUTS ────────────────────────────────────────────
+function renderShortcuts() {
+  const grid = document.getElementById('shortcutsGrid');
+  grid.innerHTML = shortcuts.map((s,i)=>`
+    <div class="shortcut" onclick="openLink('${s.url}')">
+      <div class="shortcut-icon">${s.emoji||'🌐'}</div>
+      <div class="shortcut-label">${escHtml(s.label)}</div>
+      <button class="shortcut-del" onclick="delShortcut(${i},event)">×</button>
+    </div>
+  `).join('') + `
+    <button class="shortcut-add" onclick="openModal('addShortcutModal')">
+      <div class="shortcut-add-icon">+</div>
+      <div class="shortcut-add-label">Add</div>
+    </button>
+  `;
+}
+function delShortcut(i,e){ e.stopPropagation(); shortcuts.splice(i,1); lsSet('bc_shortcuts',shortcuts); renderShortcuts(); }
+function saveShortcut() {
+  const l=document.getElementById('scLabel').value.trim();
+  const u=document.getElementById('scUrl').value.trim();
+  const em=document.getElementById('scEmoji').value.trim();
+  if(!l||!u) return;
+  shortcuts.push({label:l, url:u.startsWith('http')?u:'https://'+u, emoji:em||'🌐'});
+  lsSet('bc_shortcuts',shortcuts);
+  closeModal('addShortcutModal');
+  ['scLabel','scUrl','scEmoji'].forEach(id=>document.getElementById(id).value='');
+  renderShortcuts();
+}
+
+// ─── NAV ──────────────────────────────────────────────────
+function renderNav() {
+  document.getElementById('navLinks').innerHTML = navLinks.map(n=>`
+    <button class="nav-btn" onclick="openLink('${n.url}')">${escHtml(n.label)}</button>
+  `).join('');
+}
+function renderNavChips() {
+  const el = document.getElementById('navChips');
+  el.innerHTML = navLinks.map((n,i)=>`
+    <div class="chip" onclick="openLink('${n.url}')">
+      ${escHtml(n.label)}
+      <button class="chip-del" onclick="delNav(${i},event)">×</button>
+    </div>
+  `).join('') + `<button class="chip-add" onclick="openModal('addNavModal')">+ add link</button>`;
+}
+function delNav(i,e){ e.stopPropagation(); navLinks.splice(i,1); lsSet('bc_nav',navLinks); renderNav(); renderNavChips(); }
+function saveNav() {
+  const l=document.getElementById('navLabel').value.trim();
+  const u=document.getElementById('navUrl').value.trim();
+  if(!l||!u) return;
+  navLinks.push({label:l,url:u.startsWith('http')?u:'https://'+u});
+  lsSet('bc_nav',navLinks);
+  closeModal('addNavModal');
+  ['navLabel','navUrl'].forEach(id=>document.getElementById(id).value='');
+  renderNav(); renderNavChips();
+}
+
+// ─── PANELS / MODALS ─────────────────────────────────────
+function togglePanel(id) {
+  const panel = document.getElementById(id);
+  if (panel.classList.contains('open')) { closePanel(id); return; }
+  ['msgPanel','profilePanel'].forEach(p=>document.getElementById(p).classList.remove('open'));
+  panel.classList.add('open');
+  openPanelId = id;
+  if (id==='msgPanel') { currentConvoUserId=null; renderMsgPanel(); }
+  if (id==='profilePanel') renderProfilePanel();
+}
+function closePanel(id) {
+  document.getElementById(id).classList.remove('open');
+  openPanelId = null;
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ─── UTILS ───────────────────────────────────────────────
+function openLink(url) { if(url && url!=='#') window.open(url,'_blank'); }
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function formatTime(ts) {
+  const d = new Date(ts), now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return 'now';
+  if (diff < 3600) return Math.floor(diff/60)+'m';
+  if (diff < 86400) return Math.floor(diff/3600)+'h';
+  return d.toLocaleDateString('en',{month:'short',day:'numeric'});
+}
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ─── START ───────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

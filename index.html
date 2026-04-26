@@ -508,15 +508,6 @@ async function init() {
   document.getElementById('app').style.display = 'flex';
 }
 
-// ─── GREETING ────────────────────────────────────────────
-function setGreeting() {
-  const h = new Date().getHours();
-  const name = currentProfile?.username ? `, <span>${currentProfile.username}</span>` : '';
-  const greetWord = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-  const greetWord = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
-  document.getElementById('greeting').innerHTML = greetWord + (currentProfile?.username ? `, <span>${currentProfile.username}</span>.` : '.');
-}
-
 // ─── AUTH ─────────────────────────────────────────────────
 function renderAuthArea() {
   const el = document.getElementById('authArea');
